@@ -2,7 +2,7 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-09 — Bloque 1.1 completo.
+**Última actualización:** 2026-05-09 — Bloque 1.6 completo. Fase 1 cerrada.
 
 ---
 
@@ -17,29 +17,34 @@ Progreso:
   - [x] Docker Compose para PostgreSQL
   - [x] Configuración FastAPI + SQLAlchemy async + Alembic
   - [x] `.env` con variables base
-- [ ] **Bloque 1.2 — Modelos y migración**
-  - [ ] Modelos SQLAlchemy (10 tablas según ERD)
-  - [ ] Enums PostgreSQL nativos
-  - [ ] Migración inicial Alembic
-  - [ ] Ciclo upgrade/downgrade/upgrade validado
-- [ ] **Bloque 1.3 — Seed data**
-  - [ ] Categorías IRP (16 categorías)
-  - [ ] Reglas de imputación por categoría
-  - [ ] Configuración fiscal 2025 y 2026
-- [ ] **Bloque 1.4 — API CRUD**
-  - [ ] Contactos (CRUD + búsqueda)
-  - [ ] Comprobantes + Imputación (creación atómica)
-  - [ ] Ingresos (CRUD + acumulado anual)
-  - [ ] Adjuntos (upload multipart)
-  - [ ] Períodos fiscales (listado + recálculo)
-  - [ ] Declaraciones juradas (registro)
-  - [ ] Imputaciones (rectificación individual + batch)
-- [ ] **Bloque 1.5 — Reportes y exportación**
-  - [ ] Dashboard resumen
-  - [ ] IVA mensual
-  - [ ] Proyección IRP
-  - [ ] Exportación CSV Reg. Comprobantes
-  - [ ] Exportación resumen F120 / F515
+- [x] **Bloque 1.2 — Modelos y migración**
+  - [x] Modelos SQLAlchemy (10 tablas según ERD)
+  - [x] Enums PostgreSQL nativos (13 tipos)
+  - [x] Migración inicial Alembic (revision: e90319e232bb)
+  - [x] Ciclo upgrade/downgrade/upgrade validado
+- [x] **Bloque 1.3 — Seed data**
+  - [x] Categorías IRP (16 categorías)
+  - [x] Reglas de imputación por categoría
+  - [x] Configuración fiscal 2025 y 2026
+- [x] **Bloque 1.4 — API CRUD**
+  - [x] Contactos (CRUD + búsqueda)
+  - [x] Comprobantes + Imputación (creación atómica)
+  - [x] Ingresos (CRUD + acumulado anual)
+  - [x] Adjuntos (upload multipart)
+  - [x] Períodos fiscales (listado + recálculo)
+  - [x] Declaraciones juradas (registro)
+  - [x] Imputaciones (rectificación individual + batch)
+- [x] **Bloque 1.5 — Reportes y exportación**
+  - [x] Dashboard resumen
+  - [x] IVA mensual
+  - [x] Proyección IRP
+  - [x] Exportación CSV Reg. Comprobantes
+  - [x] Exportación resumen F120 / F515
+- [x] **Bloque 1.6 — Tests del backend** (29 tests, 100% pass)
+  - [x] test_irp_calculo.py (9 unit tests, sin BD)
+  - [x] test_comprobantes.py (7 integration tests)
+  - [x] test_exportacion.py (7 integration tests)
+  - [x] test_periodos.py (6 integration tests)
 
 Detalle del roadmap en `docs/roadmap.md`.
 
@@ -47,8 +52,10 @@ Detalle del roadmap en `docs/roadmap.md`.
 
 ## Estado BD local
 
-- Alembic head: (pendiente — primera migración no creada aún)
-- 10 tablas por crear: `contactos`, `categorias_irp`, `reglas_imputacion`, `comprobantes`, `archivos_adjuntos`, `imputaciones_fiscales`, `ingresos`, `periodos_fiscales`, `declaraciones_juradas`, `configuracion_fiscal`
+- Alembic head: `e90319e232bb` (initial)
+- 10 tablas creadas con 13 tipos ENUM nativos PostgreSQL
+- Seed ejecutado: 16 categorias_irp, 16 reglas_imputacion, 2 configuracion_fiscal (2025/2026)
+- **PENDIENTE**: actualizar `ruc`, `razon_social`, `ultimo_digito_ruc` en configuracion_fiscal (valores actuales = "COMPLETAR")
 
 ---
 
@@ -93,13 +100,12 @@ python -m app.seed.run
 
 ## Próximo paso concreto
 
-**Bloque 1.2 — Modelos y migración**
+**Fase 1 completa.** Siguiente: **Fase 2 — Frontend PWA**
 
-1. Escribir los 10 modelos SQLAlchemy en `backend/app/models/` siguiendo el ERD (`docs/erd.md`)
-2. Crear enums PostgreSQL nativos para cada modelo
-3. `alembic revision --autogenerate -m "initial"` desde `backend/`
-4. Revisar la migración generada (enums, FKs, constraints nombrados)
-5. `alembic upgrade head` y validar tablas en psql
+Ver detalle en `docs/roadmap.md`. Arrancar por:
+1. Bloque 2.1 — Setup React + Vite + Tailwind + PWA manifest + Service Worker básico
+2. Bloque 2.2 — IndexedDB con Dexie.js (esquema local espejo de PostgreSQL)
+
 
 ---
 
