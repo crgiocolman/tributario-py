@@ -55,7 +55,6 @@ Detalle del roadmap en `docs/roadmap.md`.
 - Alembic head: `e90319e232bb` (initial)
 - 10 tablas creadas con 13 tipos ENUM nativos PostgreSQL
 - Seed ejecutado: 16 categorias_irp, 16 reglas_imputacion, 2 configuracion_fiscal (2025/2026)
-- **PENDIENTE**: actualizar `ruc`, `razon_social`, `ultimo_digito_ruc` en configuracion_fiscal (valores actuales = "COMPLETAR")
 
 ---
 
@@ -103,9 +102,9 @@ python -m app.seed.run
 **Fase 1 completa.** Siguiente: **Fase 2 — Frontend PWA**
 
 Ver detalle en `docs/roadmap.md`. Arrancar por:
+
 1. Bloque 2.1 — Setup React + Vite + Tailwind + PWA manifest + Service Worker básico
 2. Bloque 2.2 — IndexedDB con Dexie.js (esquema local espejo de PostgreSQL)
-
 
 ---
 
