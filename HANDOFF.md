@@ -2,7 +2,7 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** Proyecto en fase de diseño. Cero código escrito.
+**Última actualización:** 2026-05-09 — Bloque 1.1 completo.
 
 ---
 
@@ -12,11 +12,11 @@ Memoria operativa del proyecto. Leer esto primero al retomar después de una pau
 
 Progreso:
 
-- [ ] **Bloque 1.1 — Setup inicial**
-  - [ ] Crear estructura de carpetas
-  - [ ] Docker Compose para PostgreSQL
-  - [ ] Configuración FastAPI + SQLAlchemy async + Alembic
-  - [ ] `.env` con variables base
+- [x] **Bloque 1.1 — Setup inicial**
+  - [x] Crear estructura de carpetas
+  - [x] Docker Compose para PostgreSQL
+  - [x] Configuración FastAPI + SQLAlchemy async + Alembic
+  - [x] `.env` con variables base
 - [ ] **Bloque 1.2 — Modelos y migración**
   - [ ] Modelos SQLAlchemy (10 tablas según ERD)
   - [ ] Enums PostgreSQL nativos
@@ -92,31 +92,28 @@ uvicorn app.main:app --reload
 
 ## Próximo paso concreto
 
-**Bloque 1.1 — Setup inicial**
+**Bloque 1.2 — Modelos y migración**
 
-1. Crear estructura de carpetas según `docs/especificacion_tecnica.md` sección 4
-2. `docker-compose.yml` con PostgreSQL 16
-3. `app/main.py` con FastAPI + CORS
-4. `app/database.py` con async engine + session factory
-5. `app/config.py` con pydantic-settings
-6. `alembic init` + configurar `env.py` para async
-7. `.env` con DATABASE_URL + STORAGE_PATH
-8. Validar que levanta: `uvicorn app.main:app --reload` → responde en `/docs`
+1. Escribir los 10 modelos SQLAlchemy en `backend/app/models/` siguiendo el ERD (`docs/erd.md`)
+2. Crear enums PostgreSQL nativos para cada modelo
+3. `alembic revision --autogenerate -m "initial"` desde `backend/`
+4. Revisar la migración generada (enums, FKs, constraints nombrados)
+5. `alembic upgrade head` y validar tablas en psql
 
 ---
 
 ## Documentación del proyecto
 
-| Archivo | Para qué | Frecuencia de cambio |
-|---|---|---|
-| `CLAUDE.md` | Reglas activas del proyecto | Bajo |
-| `HANDOFF.md` (este) | Estado operativo actual | Alto |
-| `docs/roadmap.md` | Fases y bloques | Bajo |
-| `docs/design-decisions.md` | Historial de por qué | Bajo |
-| `docs/common-patterns.md` | Patrones de código | Bajo |
-| `docs/erd.md` | Modelo de datos detallado | Bajo |
-| `docs/especificacion_tecnica.md` | API, sync, exportación | Bajo |
-| `docs/comandos.md` | Referencia de comandos | Bajo |
+| Archivo                          | Para qué                    | Frecuencia de cambio |
+| -------------------------------- | --------------------------- | -------------------- |
+| `CLAUDE.md`                      | Reglas activas del proyecto | Bajo                 |
+| `HANDOFF.md` (este)              | Estado operativo actual     | Alto                 |
+| `docs/roadmap.md`                | Fases y bloques             | Bajo                 |
+| `docs/design-decisions.md`       | Historial de por qué        | Bajo                 |
+| `docs/common-patterns.md`        | Patrones de código          | Bajo                 |
+| `docs/erd.md`                    | Modelo de datos detallado   | Bajo                 |
+| `docs/especificacion_tecnica.md` | API, sync, exportación      | Bajo                 |
+| `docs/comandos.md`               | Referencia de comandos      | Bajo                 |
 
 ---
 

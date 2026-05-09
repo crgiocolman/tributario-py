@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($base = \"c:\\\\Users\\\\SN94\\\\Documents\\\\Proyectos\\\\DevTechPy\\\\tributario-py\\\\backend\"; $dirs = @\\( \"app\\\\models\", \"app\\\\schemas\", \"app\\\\api\", \"app\\\\services\", \"app\\\\seed\", \"alembic\\\\versions\", \"tests\", \"storage\" \\); foreach \\($d in $dirs\\) { New-Item -ItemType Directory -Path \"$base\\\\$d\" -Force | Out-Null }; Write-Host \"Directorios creados\")",
+      "PowerShell($base = \"c:\\\\Users\\\\SN94\\\\Documents\\\\Proyectos\\\\DevTechPy\\\\tributario-py\\\\backend\"; $inits = @\\( \"app\\\\__init__.py\", \"app\\\\models\\\\__init__.py\", \"app\\\\schemas\\\\__init__.py\", \"app\\\\api\\\\__init__.py\", \"app\\\\services\\\\__init__.py\", \"app\\\\seed\\\\__init__.py\", \"alembic\\\\versions\\\\.gitkeep\", \"tests\\\\__init__.py\" \\); foreach \\($f in $inits\\) { New-Item -ItemType File -Path \"$base\\\\$f\" -Force | Out-Null }; Write-Host \"Stubs creados\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\SN94\\\\Documents\\\\Proyectos\\\\DevTechPy\\\\tributario-py\\\\backend\" -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"c:\\\\Users\\\\SN94\\\\Documents\\\\Proyectos\\\\DevTechPy\\\\tributario-py\\\\backend\\\\\", \"\"\\) })"
+    ]
+  }
+}
