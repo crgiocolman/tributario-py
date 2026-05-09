@@ -63,30 +63,31 @@ STORAGE_PATH=./storage
 
 ## Arranque del entorno local
 
-```bash
-# 1. PostgreSQL en Docker
+```powershell
+# 1. PostgreSQL en Docker (desde la raíz del proyecto)
 docker compose up -d
 
-# 2. Verificar
-docker ps
+# 2. Conectar tributario_db a la red bridge para pgAdmin
+#    (necesario cada vez que se reinicia el contenedor)
+docker network connect bridge tributario_db
 
-# 3. Venv
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# o: venv\Scripts\activate  # Windows
+# 3. IP para pgAdmin (puede cambiar si se recrean contenedores)
+docker inspect tributario_db | Select-String '"IPAddress"'
+#    Usar la IP 172.17.x.x en pgAdmin → host, port 5432, db tributario_py, user admin
 
-# 4. Dependencias
-pip install -r requirements.txt
+# 4. Venv + FastAPI (desde backend/)
+cd backend
+.\venv\Scripts\activate
+uvicorn app.main:app --reload
 
 # 5. Migración
 alembic upgrade head
 
 # 6. Seed
 python -m app.seed.run
-
-# 7. FastAPI
-uvicorn app.main:app --reload
 ```
+
+**pgAdmin**: pgAdmin corre en red `bridge` separada. `tributario_db` debe conectarse a `bridge` manualmente después de cada reinicio (paso 2). Usar IP directa, no nombre de contenedor (bridge default no tiene DNS entre contenedores).
 
 ---
 
