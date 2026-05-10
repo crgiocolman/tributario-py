@@ -2,7 +2,7 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-10 — Bloque 2.2 completo. Fase 2 en curso.
+**Última actualización:** 2026-05-10 — Bloque 2.3 completo. Fase 2 en curso.
 
 ---
 
@@ -31,7 +31,16 @@ Progreso:
   - [x] 5 rutas: `/`, `/comprobantes`, `/ingresos`, `/contactos`, `/reportes`
   - [x] Páginas placeholder: Comprobantes, Ingresos, Contactos, Reportes
   - [x] Activo via `useLocation()` / `NavLink`, sin Zustand
-- [ ] **Bloque 2.3 — Pantallas CRUD (Comprobantes, Contactos, Ingresos)**
+- [x] **Bloque 2.3 — Pantallas CRUD (Comprobantes, Contactos, Ingresos)**
+  - [x] Hooks Dexie: `useCategorias`, `useContactos`, `useComprobantes`, `useIngresos`
+  - [x] Listas con filtros + soft delete. Ingresos: acumulado computable mostrado en lista
+  - [x] `ContactoForm`: RUC, razón social, tipo, contribuyente, teléfono, email, frecuente
+  - [x] `ComprobanteForm`: operación, tipo, fecha, contacto autocomplete, timbrado, montos (IVA auto), categoría IRP con imputación auto-rellena + override, adjunto blob
+  - [x] `IngresoForm`: tipo, empleador autocomplete, período, montos, IPS 9% auto, monto computable, acumulado anual en tiempo real con alerta ≥80M
+  - [x] `IngresoLocal.deleted_at` agregado a db.ts
+  - [x] Todas las mutaciones: `id=crypto.randomUUID()`, `sync_status:'pending'`, push a `sync_queue`
+  - [x] Comprobante + Imputación en transacción única (`db.transaction`)
+  - [x] 6 rutas nuevas en App.tsx: `/nuevo` y `/:id/editar` × 3 entidades
 - [ ] **Bloque 2.4 — Flujo offline**
 - [ ] **Bloque 2.5 — Reportes con Recharts**
 
@@ -103,14 +112,15 @@ npm run dev
 
 ## Próximo paso concreto
 
-**Bloque 2.2 completo.** Siguiente: **Bloque 2.3 — Pantallas CRUD (Comprobantes, Contactos, Ingresos)**
+**Bloque 2.3 completo.** Siguiente: **Bloque 2.4 — Flujo offline**
 
-Antes de continuar, validar manualmente el bloque 2.2:
+Antes de continuar, validar manualmente el bloque 2.3:
 1. `cd frontend && npm run dev` → `http://localhost:5173`
-2. Mobile (DevTools < 768px): bottom nav con 5 tabs, tab activo en azul
-3. Desktop (> 768px): sidebar visible, bottom nav oculto
-4. Navegar entre las 5 rutas: URL cambia, item activo se resalta
-5. Home mantiene los status badges de API e IndexedDB
+2. Contactos: crear, editar, marcar frecuente, soft delete → DevTools → IndexedDB
+3. Comprobantes: crear con categoría IRP → verificar imputación auto-completada en IDB
+4. Ingresos: crear varios en el mismo año → acumulado anual se actualiza en tiempo real
+5. Adjunto: subir imagen en comprobante → verificar blob en `adjuntos` tabla IDB
+6. Navegar sin backend corriendo → todo funciona (offline-first)
 
 ---
 
