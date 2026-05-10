@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import adjuntos, comprobantes, contactos, declaraciones, exportacion, imputaciones, ingresos, periodos, reportes
+from app.api import adjuntos, categorias_irp, comprobantes, contactos, declaraciones, exportacion, imputaciones, ingresos, periodos, reportes
 
 app = FastAPI(title="TributarioPY API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -16,6 +16,7 @@ app.add_middleware(
 _PREFIX = "/api/v1"
 
 app.include_router(contactos.router, prefix=_PREFIX)
+app.include_router(categorias_irp.router, prefix=_PREFIX)
 app.include_router(comprobantes.router, prefix=_PREFIX)
 app.include_router(adjuntos.router, prefix=_PREFIX)
 app.include_router(ingresos.router, prefix=_PREFIX)

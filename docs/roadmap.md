@@ -20,10 +20,10 @@
 **Objetivo:** Interfaz móvil usable offline. Flujo principal: foto → montos → categoría → guardado.
 
 **Bloques:**
-- **2.1** Setup React + Vite + Tailwind + PWA manifest + Service Worker básico
-- **2.2** IndexedDB con Dexie.js — esquema local espejo de PostgreSQL
-- **2.3** Pantallas principales: lista de comprobantes, formulario de carga rápida, lista de contactos
-- **2.4** Carga de comprobante: cámara/galería → captura → formulario con sugerencia de imputación automática
+- **2.1** Setup React + Vite + Tailwind + PWA manifest + Service Worker básico + IndexedDB con Dexie.js (esquema local espejo de PostgreSQL) ✓
+- **2.2** Layout y navegación (shell, sidebar/bottom nav, rutas principales)
+- **2.3** Pantallas CRUD: lista de comprobantes, formulario de carga rápida, lista de contactos, ingresos
+- **2.4** Flujo offline: cámara/galería → captura → formulario con sugerencia de imputación automática
 - **2.5** Dashboard con gráficos (Recharts): IVA mensual, egresos por categoría, proyección IRP
 
 ---
