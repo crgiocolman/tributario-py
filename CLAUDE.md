@@ -87,6 +87,7 @@ Para contexto extendido: ver `docs/design-decisions.md` (historial de por qué),
 3. Si Claude Code detecta que una regla contradice al código actual, o encuentra un caso no cubierto: parar y pedir clarificación. No improvisar. CLAUDE.md es fuente de verdad
 4. Al terminar una tarea: resumen de 2-3 oraciones de qué cambió. Sin desglosar archivo por archivo salvo pedido explícito
 5. Output de Claude Code se revisa antes de aceptar/commitear
+6. **Nunca hacer `git commit` sin que el usuario lo pida explícitamente.** El usuario revisa y commitea manualmente.
 
 ---
 

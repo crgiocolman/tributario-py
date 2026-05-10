@@ -2,49 +2,43 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-09 — Bloque 1.6 completo. Fase 1 cerrada.
+**Última actualización:** 2026-05-10 — Bloque 2.1 completo. Fase 2 en curso.
 
 ---
 
 ## Fase actual
 
-**Fase 1 — Backend core (modelos + API + seed)**
+**Fase 2 — Frontend PWA**
 
 Progreso:
 
+- [x] **Bloque 2.1 — Setup frontend PWA**
+  - [x] Vite 5 + React 18 + TypeScript (Vite 5 por compatibilidad con Node 20.12.1)
+  - [x] Tailwind CSS via `@tailwindcss/vite`
+  - [x] Proxy `/api` → `http://localhost:8000` en `vite.config.ts`
+  - [x] `public/manifest.json` + `<link rel="manifest">` en `index.html`
+  - [x] `public/sw.js` básico registrado en `main.tsx`
+  - [x] Estructura de carpetas: `components/`, `pages/`, `hooks/`, `services/`, `stores/`, `utils/`, `types/`
+  - [x] `src/services/db.ts` — schema Dexie completo (7 tablas, espejo del ERD)
+  - [x] `src/services/api.ts` — fetch wrapper tipado
+  - [x] `src/services/sync.ts` — placeholder Fase 3
+  - [x] `src/App.tsx` — BrowserRouter con ruta `/` placeholder
+  - [x] `src/pages/Home.tsx` — health check de API e IndexedDB
+- [ ] **Bloque 2.2 — Layout y navegación**
+- [ ] **Bloque 2.3 — Pantallas CRUD (Comprobantes, Contactos, Ingresos)**
+- [ ] **Bloque 2.4 — Flujo offline**
+- [ ] **Bloque 2.5 — Reportes con Recharts**
+
+---
+
+## Fase 1 — Backend core (cerrada)
+
 - [x] **Bloque 1.1 — Setup inicial**
-  - [x] Crear estructura de carpetas
-  - [x] Docker Compose para PostgreSQL
-  - [x] Configuración FastAPI + SQLAlchemy async + Alembic
-  - [x] `.env` con variables base
-- [x] **Bloque 1.2 — Modelos y migración**
-  - [x] Modelos SQLAlchemy (10 tablas según ERD)
-  - [x] Enums PostgreSQL nativos (13 tipos)
-  - [x] Migración inicial Alembic (revision: e90319e232bb)
-  - [x] Ciclo upgrade/downgrade/upgrade validado
-- [x] **Bloque 1.3 — Seed data**
-  - [x] Categorías IRP (16 categorías)
-  - [x] Reglas de imputación por categoría
-  - [x] Configuración fiscal 2025 y 2026
-- [x] **Bloque 1.4 — API CRUD**
-  - [x] Contactos (CRUD + búsqueda)
-  - [x] Comprobantes + Imputación (creación atómica)
-  - [x] Ingresos (CRUD + acumulado anual)
-  - [x] Adjuntos (upload multipart)
-  - [x] Períodos fiscales (listado + recálculo)
-  - [x] Declaraciones juradas (registro)
-  - [x] Imputaciones (rectificación individual + batch)
-- [x] **Bloque 1.5 — Reportes y exportación**
-  - [x] Dashboard resumen
-  - [x] IVA mensual
-  - [x] Proyección IRP
-  - [x] Exportación CSV Reg. Comprobantes
-  - [x] Exportación resumen F120 / F515
+- [x] **Bloque 1.2 — Modelos y migración** (revision: e90319e232bb)
+- [x] **Bloque 1.3 — Seed data** (16 categorías IRP, reglas, config fiscal 2025/2026)
+- [x] **Bloque 1.4 — API CRUD** (contactos, comprobantes, ingresos, adjuntos, períodos, DJ, imputaciones)
+- [x] **Bloque 1.5 — Reportes y exportación** (dashboard, IVA mensual, proyección IRP, CSV, F120/F515)
 - [x] **Bloque 1.6 — Tests del backend** (29 tests, 100% pass)
-  - [x] test_irp_calculo.py (9 unit tests, sin BD)
-  - [x] test_comprobantes.py (7 integration tests)
-  - [x] test_exportacion.py (7 integration tests)
-  - [x] test_periodos.py (6 integration tests)
 
 Detalle del roadmap en `docs/roadmap.md`.
 
@@ -91,6 +85,10 @@ alembic upgrade head
 
 # 6. Seed
 python -m app.seed.run
+
+# 7. Frontend (desde frontend/)
+cd ..\frontend
+npm run dev
 ```
 
 **pgAdmin**: pgAdmin corre en red `bridge` separada. `tributario_db` debe conectarse a `bridge` manualmente después de cada reinicio (paso 2). Usar IP directa, no nombre de contenedor (bridge default no tiene DNS entre contenedores).
@@ -99,12 +97,12 @@ python -m app.seed.run
 
 ## Próximo paso concreto
 
-**Fase 1 completa.** Siguiente: **Fase 2 — Frontend PWA**
+**Bloque 2.1 completo.** Siguiente: **Bloque 2.2 — Layout y navegación**
 
-Ver detalle en `docs/roadmap.md`. Arrancar por:
-
-1. Bloque 2.1 — Setup React + Vite + Tailwind + PWA manifest + Service Worker básico
-2. Bloque 2.2 — IndexedDB con Dexie.js (esquema local espejo de PostgreSQL)
+Antes de continuar, validar manualmente el bloque 2.1:
+1. `cd frontend && npm run dev` → `http://localhost:5173`
+2. Home muestra "TributarioPY" con estado de API e IndexedDB
+3. DevTools → Application: IndexedDB `tributario_py`, Manifest, Service Worker
 
 ---
 
