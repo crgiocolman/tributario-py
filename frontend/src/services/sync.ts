@@ -168,6 +168,7 @@ async function pushAdjuntos(items: SyncQueueItem[]): Promise<void> {
 
     try {
       const formData = new FormData();
+      formData.append('adjunto_id', item.registro_id);
       formData.append('archivo', adjunto.blob, adjunto.nombre_archivo);
 
       const res = await fetch(`${BASE_URL}/comprobantes/${adjunto.comprobante_id}/adjuntos`, {
@@ -332,6 +333,18 @@ export async function fetchAdjuntoBlob(adjuntoId: string): Promise<Blob | null> 
   }
 }
 
+// --- cache cleanup ---
+
+async function cleanupLocalCache(): Promise<void> {
+  // Liberar blobs de adjuntos ya sincronizados (descarga on-demand si se necesitan)
+  await db.adjuntos.where('sync_status').equals('synced').modify({ blob: undefined });
+
+  // Eliminar de Dexie los registros borrados lógicamente que ya están confirmados en el servidor
+  await db.comprobantes.filter(c => c.deleted_at != null && c.sync_status === 'synced').delete();
+  await db.contactos.filter(c => c.deleted_at != null && c.sync_status === 'synced').delete();
+  await db.ingresos.filter(i => i.deleted_at != null && i.sync_status === 'synced').delete();
+}
+
 // --- lifecycle ---
 
 export async function syncAll(): Promise<void> {
@@ -342,6 +355,7 @@ export async function syncAll(): Promise<void> {
 
   await pull();
   await push();
+  await cleanupLocalCache();
 
   const afterFailed = await db.sync_queue.filter((i) => i.intentos >= MAX_RETRIES).count();
   const afterPending = await db.sync_queue.filter((i) => i.intentos < MAX_RETRIES).count();

@@ -78,6 +78,14 @@ Razonamiento detrás de las decisiones que hoy son reglas en `CLAUDE.md`. Refere
 
 ---
 
+## UUID de adjunto generado en el cliente, no en el servidor
+
+**Decisión:** El endpoint `POST /comprobantes/:id/adjuntos` acepta un `adjunto_id` opcional via Form y lo usa como PK si se provee. Sin él, genera uno propio (compatibilidad con uploads manuales via Swagger).
+
+**Por qué:** La regla general del proyecto es UUID generado en el cliente (offline-first). El endpoint de upload multipart se implementó inicialmente con `id=uuid4()` propio, lo que rompió el DELETE desde el cliente (el cliente conocía su UUID, el servidor guardaba otro). Al unificar, el cliente puede crear el adjunto en Dexie, agregarlo a sync_queue con su UUID, subirlo, y luego hacer DELETE con el mismo UUID sin inconsistencias.
+
+---
+
 ## Archivos adjuntos en disco local, no en BD
 
 **Decisión:** PDFs y fotos se guardan en `{STORAGE_PATH}/{año}/{mes}/{uuid}.{ext}`. La BD solo guarda la referencia.

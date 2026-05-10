@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +25,7 @@ router = APIRouter(tags=["adjuntos"])
 async def subir_adjunto(
     comprobante_id: UUID,
     archivo: UploadFile = File(...),
+    adjunto_id: UUID | None = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
     comp = (
@@ -44,7 +45,7 @@ async def subir_adjunto(
 
     now = datetime.now(timezone.utc)
     adjunto = ArchivoAdjunto(
-        id=uuid4(),
+        id=adjunto_id or uuid4(),
         comprobante_id=comprobante_id,
         nombre_archivo=archivo.filename or "archivo",
         tipo_mime=archivo.content_type or "application/octet-stream",

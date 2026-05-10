@@ -2,20 +2,38 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-10 — Fase 2 completa. Fase 3 en curso.
+**Última actualización:** 2026-05-10 — Fase 3 completa. Fase 4 pendiente.
 
 ---
 
 ## Fase actual
 
-**Fase 3 — Sincronización**
+**Fase 4 — Exportación y validación** (no iniciada)
 
-Objetivo: los datos del celular se sincronizan con el backend en la PC de casa.
+Ver puntos de arranque en la sección "Próximo paso concreto".
+
+---
+
+## Fase 3 — Sincronización (cerrada)
 
 - [x] **Bloque 3.1 — Sync engine en frontend** (cola de cambios, push/pull, backoff exponencial)
 - [x] **Bloque 3.2 — Endpoints de sync en backend** (push, pull, status)
 - [x] **Bloque 3.3 — Sync de archivos adjuntos** (multipart, separado de datos)
 - [x] **Bloque 3.4 — UI de estado de sync** (indicador, errores, retry manual)
+- [x] **Testing de integración + fixes** (ver notas abajo)
+
+### Fixes aplicados en testing de integración
+
+- `useComprobantes`: `pushSync()` ahora también envía `ImputacionFiscal` a `sync_queue` en crear y actualizar.
+- `sync.ts`: `pull()` silencia errores de red (evita que `syncAll()` quede colgado en estado `'syncing'`).
+- `sync.ts`: el intervalo de 5 min llama `syncAll()` en lugar de solo `pull()`, para que también haga push.
+- `sync.ts`: `pushSync()` dispara `push()` fire-and-forget al guardar un registro (push inmediato sin esperar el intervalo).
+- `sync.ts`: `cleanupLocalCache()` corre al final de cada `syncAll()` — borra blobs de adjuntos sincronizados y elimina de Dexie los registros con `deleted_at` ya confirmados en el servidor.
+- `SyncIndicator.tsx`: panel compact usa `right-0` (se abría fuera de pantalla en mobile).
+- `adjuntos.py`: el endpoint de upload acepta `adjunto_id` via Form para respetar el UUID generado en el cliente.
+- `ComprobanteForm.tsx`: vista de adjuntos existentes en modo edición (miniatura, ícono PDF, borrar).
+- `ComprobanteForm.tsx`: reconciliación con backend al abrir en edición — elimina de Dexie adjuntos que ya no existen en el servidor.
+- `ComprobanteForm.tsx`: recarga la lista de adjuntos cuando `lastSyncAt` cambia (limpia cache visual post-sync).
 
 ---
 
@@ -95,11 +113,7 @@ npm run dev
 
 ## Próximo paso concreto
 
-**Bloque 3.1 cerrado. Siguiente: Bloque 3.2 — Endpoints de sync en backend.**
-
-**Fase 3 cerrada. Siguiente: Fase 4 — Exportación.**
-
-Puntos de arranque para Fase 4 (Exportación):
+**Fase 4 — Exportación.** Puntos de arranque:
 - `Reportes.tsx` es el placeholder — habilitar exportación CSV Reg. Comprobantes, resumen F120/F515, validaciones pre-presentación.
 - Endpoints backend ya existen en `api/exportacion.py` (Bloque 1.5).
 - `src/stores/syncStore.ts` — Zustand store ya disponible, puede usarse para estado global de reportes si se necesita.

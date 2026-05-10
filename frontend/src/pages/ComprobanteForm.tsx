@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { db, type ContactoLocal, type ArchivoAdjuntoLocal } from '../services/db';
+import { fetchAdjuntoBlob, syncService } from '../services/sync';
+import { useSyncStore } from '../stores/syncStore';
 import { useComprobantes } from '../hooks/useComprobantes';
 import { useCategorias } from '../hooks/useCategorias';
 import { generateUUID } from '../utils/uuid';
@@ -71,6 +73,7 @@ export default function ComprobanteForm() {
   const { crear, actualizar } = useComprobantes();
   const { categorias, loading: loadingCats } = useCategorias();
   const esEdicion = Boolean(id);
+  const { lastSyncAt } = useSyncStore();
 
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [imp, setImp] = useState<ImputacionState>(INITIAL_IMP);
@@ -80,6 +83,8 @@ export default function ComprobanteForm() {
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
   const [adjuntoFile, setAdjuntoFile] = useState<File | null>(null);
   const [adjuntoPreviewUrl, setAdjuntoPreviewUrl] = useState<string | null>(null);
+  const [adjuntosExistentes, setAdjuntosExistentes] = useState<ArchivoAdjuntoLocal[]>([]);
+  const [adjuntoBlobUrls, setAdjuntoBlobUrls] = useState<Record<string, string>>({});
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const montosRef = useRef<HTMLDivElement>(null);
@@ -175,6 +180,69 @@ export default function ComprobanteForm() {
       .toArray()
       .then(setSugerencias);
   }, [contactoQuery, contactoSeleccionado]);
+
+  // Cargar adjuntos existentes en modo edición; re-corre cuando termina un sync
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    const createdUrls: string[] = [];
+
+    async function cargarAdjuntos() {
+      let lista = await db.adjuntos.where('comprobante_id').equals(id!).toArray();
+      if (cancelled) return;
+
+      // Reconciliar con el servidor para eliminar registros huérfanos
+      const haySincronizados = lista.some(a => a.sync_status === 'synced');
+      if (haySincronizados && syncService.isOnline) {
+        try {
+          const res = await fetch(`/api/v1/comprobantes/${id}/adjuntos`);
+          if (res.ok && !cancelled) {
+            const { data: serverList } = await res.json() as { data: { id: string }[] };
+            const serverIds = new Set(serverList.map((a: { id: string }) => a.id));
+            const orphans = lista.filter(a => a.sync_status === 'synced' && !serverIds.has(a.id));
+            if (orphans.length > 0) {
+              await Promise.all(orphans.map(a => db.adjuntos.delete(a.id)));
+              lista = lista.filter(a => !orphans.some(o => o.id === a.id));
+            }
+          }
+        } catch { /* continuar con lista de Dexie */ }
+      }
+
+      if (cancelled) return;
+      setAdjuntosExistentes(lista);
+
+      const urls: Record<string, string> = {};
+      for (const adj of lista) {
+        if (!adj.tipo_mime.startsWith('image/')) continue;
+        const blob = adj.blob ?? await fetchAdjuntoBlob(adj.id);
+        if (blob && !cancelled) {
+          const url = URL.createObjectURL(blob);
+          urls[adj.id] = url;
+          createdUrls.push(url);
+        }
+      }
+      if (!cancelled) setAdjuntoBlobUrls(urls);
+    }
+
+    cargarAdjuntos();
+    return () => {
+      cancelled = true;
+      createdUrls.forEach(URL.revokeObjectURL);
+    };
+  }, [id, lastSyncAt]);
+
+  async function eliminarAdjunto(adjunto: ArchivoAdjuntoLocal) {
+    if (adjuntoBlobUrls[adjunto.id]) {
+      URL.revokeObjectURL(adjuntoBlobUrls[adjunto.id]);
+      setAdjuntoBlobUrls(prev => { const n = { ...prev }; delete n[adjunto.id]; return n; });
+    }
+    setAdjuntosExistentes(prev => prev.filter(a => a.id !== adjunto.id));
+    await db.adjuntos.delete(adjunto.id);
+    await db.sync_queue.where('registro_id').equals(adjunto.id).delete();
+    if (adjunto.sync_status === 'synced') {
+      fetch(`/api/v1/adjuntos/${adjunto.id}`, { method: 'DELETE' }).catch(() => {});
+    }
+  }
 
   function seleccionarContacto(c: ContactoLocal) {
     setContactoSeleccionado(c);
@@ -548,6 +616,47 @@ export default function ComprobanteForm() {
 
           {/* Adjunto */}
           <p className={sectionCls}>Adjunto</p>
+
+          {/* Adjuntos existentes */}
+          {adjuntosExistentes.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {adjuntosExistentes.map(adj => (
+                <div key={adj.id} className="flex items-center gap-3 bg-slate-800 rounded-lg p-2.5">
+                  {adjuntoBlobUrls[adj.id] ? (
+                    <img
+                      src={adjuntoBlobUrls[adj.id]}
+                      alt={adj.nombre_archivo}
+                      className="w-12 h-12 object-cover rounded-md shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 flex items-center justify-center bg-slate-700 rounded-md shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-slate-400">
+                        <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 013.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 013.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875zM9.75 17.25a.75.75 0 00-1.5 0V18a.75.75 0 001.5 0v-.75zm2.25-3a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zm3.75-1.5a.75.75 0 00-1.5 0V18a.75.75 0 001.5 0v-4.5z" clipRule="evenodd" />
+                        <path d="M14.25 5.25a5.23 5.23 0 00-1.279-3.434 9.768 9.768 0 016.963 6.963A5.23 5.23 0 0016.5 7.5h-1.875a.375.375 0 01-.375-.375V5.25z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-200 truncate">{adj.nombre_archivo}</p>
+                    <p className="text-xs text-slate-500">
+                      {(adj.tamano_bytes / 1024).toFixed(0)} KB · {adj.sync_status === 'synced' ? 'Sincronizado' : 'Pendiente'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => eliminarAdjunto(adj)}
+                    className="text-slate-500 hover:text-red-400 transition-colors p-1 shrink-0"
+                    aria-label="Eliminar adjunto"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                      <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {adjuntoPreviewUrl && (
             <div className="relative rounded-lg overflow-hidden">
               <img src={adjuntoPreviewUrl} alt="Vista previa" className="w-full max-h-52 object-cover rounded-lg" />
