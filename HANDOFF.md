@@ -2,47 +2,30 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-10 — Bloque 2.3 completo. Fase 2 en curso.
+**Última actualización:** 2026-05-10 — Fase 2 completa. Fase 3 en curso.
 
 ---
 
 ## Fase actual
 
-**Fase 2 — Frontend PWA**
+**Fase 3 — Sincronización**
 
-Progreso:
+Objetivo: los datos del celular se sincronizan con el backend en la PC de casa.
 
-- [x] **Bloque 2.1 — Setup frontend PWA**
-  - [x] Vite 5 + React 18 + TypeScript (Vite 5 por compatibilidad con Node 20.12.1)
-  - [x] Tailwind CSS via `@tailwindcss/vite`
-  - [x] Proxy `/api` → `http://localhost:8000` en `vite.config.ts`
-  - [x] `public/manifest.json` + `<link rel="manifest">` en `index.html`
-  - [x] `public/sw.js` básico registrado en `main.tsx`
-  - [x] Estructura de carpetas: `components/`, `pages/`, `hooks/`, `services/`, `stores/`, `utils/`, `types/`
-  - [x] `src/services/db.ts` — schema Dexie completo (7 tablas, espejo del ERD)
-  - [x] `src/services/api.ts` — fetch wrapper tipado
-  - [x] `src/services/sync.ts` — placeholder Fase 3
-  - [x] `src/App.tsx` — BrowserRouter con ruta `/` placeholder
-  - [x] `src/pages/Home.tsx` — health check de API e IndexedDB
-- [x] **Bloque 2.2 — Layout y navegación**
-  - [x] `src/components/layout/AppLayout.tsx` — layout wrapper con `<Outlet />`
-  - [x] `src/components/layout/BottomNav.tsx` — bottom nav mobile (hidden md+), SVGs inline
-  - [x] `src/components/layout/Sidebar.tsx` — sidebar desktop (hidden mobile, visible md+)
-  - [x] 5 rutas: `/`, `/comprobantes`, `/ingresos`, `/contactos`, `/reportes`
-  - [x] Páginas placeholder: Comprobantes, Ingresos, Contactos, Reportes
-  - [x] Activo via `useLocation()` / `NavLink`, sin Zustand
-- [x] **Bloque 2.3 — Pantallas CRUD (Comprobantes, Contactos, Ingresos)**
-  - [x] Hooks Dexie: `useCategorias`, `useContactos`, `useComprobantes`, `useIngresos`
-  - [x] Listas con filtros + soft delete. Ingresos: acumulado computable mostrado en lista
-  - [x] `ContactoForm`: RUC, razón social, tipo, contribuyente, teléfono, email, frecuente
-  - [x] `ComprobanteForm`: operación, tipo, fecha, contacto autocomplete, timbrado, montos (IVA auto), categoría IRP con imputación auto-rellena + override, adjunto blob
-  - [x] `IngresoForm`: tipo, empleador autocomplete, período, montos, IPS 9% auto, monto computable, acumulado anual en tiempo real con alerta ≥80M
-  - [x] `IngresoLocal.deleted_at` agregado a db.ts
-  - [x] Todas las mutaciones: `id=crypto.randomUUID()`, `sync_status:'pending'`, push a `sync_queue`
-  - [x] Comprobante + Imputación en transacción única (`db.transaction`)
-  - [x] 6 rutas nuevas en App.tsx: `/nuevo` y `/:id/editar` × 3 entidades
-- [ ] **Bloque 2.4 — Flujo offline**
-- [ ] **Bloque 2.5 — Reportes con Recharts**
+- [ ] **Bloque 3.1 — Sync engine en frontend** (cola de cambios, push/pull, backoff exponencial)
+- [ ] **Bloque 3.2 — Endpoints de sync en backend** (push, pull, status)
+- [ ] **Bloque 3.3 — Sync de archivos adjuntos** (multipart, separado de datos)
+- [ ] **Bloque 3.4 — UI de estado de sync** (indicador, errores, retry manual)
+
+---
+
+## Fase 2 — Frontend PWA (cerrada)
+
+- [x] **Bloque 2.1** — Setup Vite 5 + React 18 + Tailwind + PWA manifest + SW básico + Dexie (7 tablas)
+- [x] **Bloque 2.2** — Layout y navegación (AppLayout, BottomNav, Sidebar, 5 rutas)
+- [x] **Bloque 2.3** — CRUD completo: Contactos, Comprobantes, Ingresos. Hooks Dexie, formularios con autocomplete, adjunto blob, sync_queue, transacción atómica comprobante + imputación
+- [x] **Bloque 2.4** — Flujo offline: file picker + cámara en ComprobanteForm, vista previa blob, navegación con `pendingFile` desde lista
+- [x] **Bloque 2.5** — Dashboard (`Home.tsx`): alertas vencimientos, métricas del mes, BarChart IVA mensual, PieChart egresos × categoría, proyección IRP con escala progresiva. Alertas muestran el vencimiento más próximo por tipo (período anterior vence este mes; si ya pasó, muestra el del período actual), ventana 45 días.
 
 ---
 
@@ -112,15 +95,16 @@ npm run dev
 
 ## Próximo paso concreto
 
-**Bloque 2.3 completo.** Siguiente: **Bloque 2.4 — Flujo offline**
+**Fase 2 cerrada. Siguiente: Bloque 3.1 — Sync engine en frontend.**
 
-Antes de continuar, validar manualmente el bloque 2.3:
-1. `cd frontend && npm run dev` → `http://localhost:5173`
-2. Contactos: crear, editar, marcar frecuente, soft delete → DevTools → IndexedDB
-3. Comprobantes: crear con categoría IRP → verificar imputación auto-completada en IDB
-4. Ingresos: crear varios en el mismo año → acumulado anual se actualiza en tiempo real
-5. Adjunto: subir imagen en comprobante → verificar blob en `adjuntos` tabla IDB
-6. Navegar sin backend corriendo → todo funciona (offline-first)
+Puntos de arranque para Fase 3:
+- `src/services/sync.ts` es el placeholder actual (vacío). Ahí vive la lógica de sync.
+- `sync_queue` en IDB ya se popula con cada mutación (`sync_status:'pending'`).
+- Estrategia acordada: offline-first, last-write-wins por `updated_at`, backoff exponencial 5 reintentos.
+- Adjuntos se sincronizan en un paso separado (multipart) después de su comprobante padre.
+- Pull periódico cada 5 minutos si hay conexión.
+
+**Nota sobre `pages/Reportes.tsx`:** actualmente muestra "En construcción". Es el placeholder para Fase 4 (exportación CSV Reg. Comprobantes, resumen F120/F515, validaciones pre-presentación). No eliminar ni reutilizar para otra cosa.
 
 ---
 

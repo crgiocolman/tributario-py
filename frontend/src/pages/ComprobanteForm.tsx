@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { db, type ContactoLocal, type ArchivoAdjuntoLocal } from '../services/db';
 import { useComprobantes } from '../hooks/useComprobantes';
 import { useCategorias } from '../hooks/useCategorias';
@@ -79,8 +79,11 @@ export default function ComprobanteForm() {
   const [sugerencias, setSugerencias] = useState<ContactoLocal[]>([]);
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
   const [adjuntoFile, setAdjuntoFile] = useState<File | null>(null);
+  const [adjuntoPreviewUrl, setAdjuntoPreviewUrl] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  const montosRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
 
   // Derivados
   const exento = toInt(form.monto_exento);
@@ -96,6 +99,28 @@ export default function ComprobanteForm() {
     ? exento + gravado5 + gravado10
     : exento + gravado5 + iva5 + gravado10 + iva10;
   const periodo_fiscal = form.fecha_emision ? form.fecha_emision.slice(0, 7) : '';
+
+  // Preview URL para adjunto de imagen
+  useEffect(() => {
+    if (!adjuntoFile?.type.startsWith('image/')) {
+      setAdjuntoPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(adjuntoFile);
+    setAdjuntoPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [adjuntoFile]);
+
+  // Archivo pre-cargado desde captura de cámara (navigation state)
+  useEffect(() => {
+    if (id) return;
+    const state = location.state as { pendingFile?: File } | null;
+    if (state?.pendingFile) {
+      setAdjuntoFile(state.pendingFile);
+      setTimeout(() => montosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cargar datos en modo edición
   useEffect(() => {
@@ -117,6 +142,7 @@ export default function ComprobanteForm() {
         concepto: c.concepto ?? '',
         notas: c.notas ?? '',
         cargado_marangatu: c.cargado_marangatu,
+        iva_incluido: true,
       });
       const contacto = await db.contactos.get(c.contacto_id);
       if (contacto) {
@@ -406,7 +432,7 @@ export default function ComprobanteForm() {
           </div>
 
           {/* Montos */}
-          <div className="flex items-center justify-between pt-4 pb-2">
+          <div ref={montosRef} className="flex items-center justify-between pt-4 pb-2">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Montos (en Guaraníes)</span>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -514,15 +540,52 @@ export default function ComprobanteForm() {
 
           {/* Adjunto */}
           <p className={sectionCls}>Adjunto</p>
+          {adjuntoPreviewUrl && (
+            <div className="relative rounded-lg overflow-hidden">
+              <img src={adjuntoPreviewUrl} alt="Vista previa" className="w-full max-h-52 object-cover rounded-lg" />
+              <button
+                type="button"
+                onClick={() => setAdjuntoFile(null)}
+                className="absolute top-2 right-2 bg-slate-900/70 hover:bg-red-900/70 text-white rounded-full p-1.5 transition-colors"
+                aria-label="Quitar foto"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </button>
+            </div>
+          )}
           <div>
             <label className={labelCls}>Foto o PDF del comprobante</label>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              className="w-full text-sm text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600 cursor-pointer"
-              onChange={e => setAdjuntoFile(e.target.files?.[0] ?? null)}
-            />
-            {adjuntoFile && (
+            <div className="flex gap-2">
+              <label className="flex-1 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={e => setAdjuntoFile(e.target.files?.[0] ?? null)}
+                />
+                <div className="w-full text-center text-sm text-slate-400 border border-dashed border-slate-600 rounded-lg py-2 px-3 hover:border-slate-500 transition-colors">
+                  {adjuntoFile ? adjuntoFile.name : 'Elegir archivo'}
+                </div>
+              </label>
+              <label className="cursor-pointer shrink-0" title="Tomar foto con cámara">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={e => setAdjuntoFile(e.target.files?.[0] ?? null)}
+                />
+                <div className="bg-slate-700 hover:bg-slate-600 rounded-lg px-3 py-2 flex items-center justify-center transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-slate-300">
+                    <path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" />
+                    <path fillRule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 01-3 3h-15a3 3 0 01-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 001.11-.71l.822-1.315a2.942 2.942 0 012.332-1.39zM6.75 12.75a5.25 5.25 0 1110.5 0 5.25 5.25 0 01-10.5 0zM12 10.5a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </label>
+            </div>
+            {adjuntoFile && !adjuntoPreviewUrl && (
               <p className="text-xs text-slate-500 mt-1">{adjuntoFile.name} ({(adjuntoFile.size / 1024).toFixed(0)} KB)</p>
             )}
           </div>

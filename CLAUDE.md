@@ -140,3 +140,13 @@ Para contexto extendido: ver `docs/design-decisions.md` (historial de por qué),
 2. `git log --oneline -20` para últimos commits
 3. Verificar entorno: `docker ps`, venv activado, `alembic current`
 4. Abrir Claude Code en la raíz del proyecto (lee CLAUDE.md automático)
+
+---
+
+## Frontend — trampas conocidas
+
+**Layout de formularios largos (React + Tailwind):**
+Usar `flex flex-col h-full` en el div raíz + `flex-1 overflow-y-auto` en el `<form>`. Esto crea un nested scroll container correcto. Quitar esa estructura hace que el body scrollee y aparezca fondo blanco debajo del contenido. Ver `docs/common-patterns.md`.
+
+**`<input type="file">` dentro de `<label>` custom:**
+Usar `className="hidden"`, nunca `className="sr-only"`. `sr-only` usa `position: absolute` sin contenedor posicionado → el input se ubica relativo al viewport → extiende el body → fondo blanco en forms largos. Con `hidden` el label sigue abriendo el file picker normalmente.

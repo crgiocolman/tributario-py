@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useComprobantes } from '../hooks/useComprobantes';
 
@@ -32,6 +32,14 @@ export default function Comprobantes() {
   const [periodo, setPeriodo] = useState('');
   const [tipoOp, setTipoOp] = useState('');
   const { comprobantes, eliminar } = useComprobantes({ periodo_fiscal: periodo || undefined, tipo_operacion: tipoOp || undefined });
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  function handleCameraCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    navigate('/comprobantes/nuevo', { state: { pendingFile: file } });
+  }
 
   async function handleEliminar(id: string, num: string) {
     if (!window.confirm(`¿Eliminar comprobante "${num}"?`)) return;
@@ -122,6 +130,28 @@ export default function Comprobantes() {
           </div>
         ))}
       </div>
+
+      {/* Hidden camera input */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        onChange={handleCameraCapture}
+      />
+
+      {/* Camera FAB */}
+      <button
+        onClick={() => cameraInputRef.current?.click()}
+        className="fixed bottom-20 right-4 w-14 h-14 bg-blue-600 hover:bg-blue-500 rounded-full shadow-lg flex items-center justify-center z-10 transition-colors"
+        aria-label="Capturar foto de comprobante"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+          <path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" />
+          <path fillRule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 01-3 3h-15a3 3 0 01-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 001.11-.71l.822-1.315a2.942 2.942 0 012.332-1.39zM6.75 12.75a5.25 5.25 0 1110.5 0 5.25 5.25 0 01-10.5 0zM12 10.5a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" clipRule="evenodd" />
+        </svg>
+      </button>
     </div>
   );
 }

@@ -166,9 +166,9 @@ export default function IngresoForm() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-5 pb-4 border-b border-slate-800">
+      <div className="sticky top-0 z-10 bg-slate-950 flex items-center gap-3 px-4 pt-5 pb-4 border-b border-slate-800">
         <button onClick={() => navigate('/ingresos')} className="text-slate-400 hover:text-slate-200 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
             <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
@@ -179,7 +179,7 @@ export default function IngresoForm() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+      <form onSubmit={handleSubmit}>
         <div className="p-4 space-y-4">
           {error && (
             <div className="bg-red-900/40 border border-red-700 text-red-300 text-sm rounded-lg px-3 py-2">

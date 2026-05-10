@@ -157,3 +157,52 @@ class Settings(BaseSettings):
 
 settings = Settings()
 ```
+
+---
+
+## Layout de páginas con formulario largo (React + Tailwind)
+
+Las páginas que contienen formularios largos necesitan un **nested scroll container** para que el contenido no desborde el body y cause un fondo blanco debajo.
+
+### Estructura correcta
+
+```tsx
+<div className="flex flex-col h-full">        {/* ocupa exactamente la altura de <main> */}
+  <div className="flex items-center ...">      {/* header fijo arriba por flex layout */}
+    ...
+  </div>
+  <form className="flex-1 overflow-y-auto">   {/* scroll propio del form */}
+    ...
+  </form>
+</div>
+```
+
+**Por qué funciona:** `h-full` llena `main` (que tiene `flex-1` en AppLayout). El form tiene `flex-1 overflow-y-auto`, así que scrollea internamente. El body nunca scrollea.
+
+### Qué NO hacer
+
+```tsx
+{/* MAL: quita el scroll anidado, el body scrollea y aparece fondo blanco */}
+<div className="min-h-full">
+  <div className="sticky top-0">...</div>
+  <form>...</form>
+</div>
+```
+
+---
+
+## `<input type="file">` oculto dentro de `<label>`
+
+Para reemplazar el input de archivo nativo con un botón custom, usar `hidden` (no `sr-only`).
+
+```tsx
+{/* CORRECTO */}
+<label className="cursor-pointer">
+  <input type="file" className="hidden" onChange={...} />
+  <div className="...">Elegir archivo</div>
+</label>
+```
+
+**Por qué no `sr-only`:** `sr-only` usa `position: absolute` sin `position: relative` en el contenedor. Sin un ancestro posicionado, el input se ubica relativo al viewport en coordenadas de página — si el form es más largo que el viewport, esas coordenadas quedan fuera de la pantalla, extienden el body y causan el mismo fondo blanco.
+
+`hidden` (`display: none`) elimina el elemento del layout por completo. El click en el label igual abre el file picker.
