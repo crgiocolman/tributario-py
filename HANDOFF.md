@@ -12,10 +12,10 @@ Memoria operativa del proyecto. Leer esto primero al retomar después de una pau
 
 Objetivo: los datos del celular se sincronizan con el backend en la PC de casa.
 
-- [ ] **Bloque 3.1 — Sync engine en frontend** (cola de cambios, push/pull, backoff exponencial)
-- [ ] **Bloque 3.2 — Endpoints de sync en backend** (push, pull, status)
-- [ ] **Bloque 3.3 — Sync de archivos adjuntos** (multipart, separado de datos)
-- [ ] **Bloque 3.4 — UI de estado de sync** (indicador, errores, retry manual)
+- [x] **Bloque 3.1 — Sync engine en frontend** (cola de cambios, push/pull, backoff exponencial)
+- [x] **Bloque 3.2 — Endpoints de sync en backend** (push, pull, status)
+- [x] **Bloque 3.3 — Sync de archivos adjuntos** (multipart, separado de datos)
+- [x] **Bloque 3.4 — UI de estado de sync** (indicador, errores, retry manual)
 
 ---
 
@@ -95,14 +95,14 @@ npm run dev
 
 ## Próximo paso concreto
 
-**Fase 2 cerrada. Siguiente: Bloque 3.1 — Sync engine en frontend.**
+**Bloque 3.1 cerrado. Siguiente: Bloque 3.2 — Endpoints de sync en backend.**
 
-Puntos de arranque para Fase 3:
-- `src/services/sync.ts` es el placeholder actual (vacío). Ahí vive la lógica de sync.
-- `sync_queue` en IDB ya se popula con cada mutación (`sync_status:'pending'`).
-- Estrategia acordada: offline-first, last-write-wins por `updated_at`, backoff exponencial 5 reintentos.
-- Adjuntos se sincronizan en un paso separado (multipart) después de su comprobante padre.
-- Pull periódico cada 5 minutos si hay conexión.
+**Fase 3 cerrada. Siguiente: Fase 4 — Exportación.**
+
+Puntos de arranque para Fase 4 (Exportación):
+- `Reportes.tsx` es el placeholder — habilitar exportación CSV Reg. Comprobantes, resumen F120/F515, validaciones pre-presentación.
+- Endpoints backend ya existen en `api/exportacion.py` (Bloque 1.5).
+- `src/stores/syncStore.ts` — Zustand store ya disponible, puede usarse para estado global de reportes si se necesita.
 
 **Nota sobre `pages/Reportes.tsx`:** actualmente muestra "En construcción". Es el placeholder para Fase 4 (exportación CSV Reg. Comprobantes, resumen F120/F515, validaciones pre-presentación). No eliminar ni reutilizar para otra cosa.
 

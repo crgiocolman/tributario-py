@@ -128,6 +128,13 @@ export interface SyncQueueItem {
   ultimo_error?: string;
 }
 
+export interface SyncMetadata {
+  key: string;
+  device_id: string;
+  last_pull_timestamp: string | null;
+  last_push_timestamp: string | null;
+}
+
 export class TributarioDatabase extends Dexie {
   contactos!: Table<ContactoLocal>;
   comprobantes!: Table<ComprobanteLocal>;
@@ -136,6 +143,7 @@ export class TributarioDatabase extends Dexie {
   ingresos!: Table<IngresoLocal>;
   categorias_irp!: Table<CategoriaIRPLocal>;
   sync_queue!: Table<SyncQueueItem>;
+  sync_metadata!: Table<SyncMetadata>;
 
   constructor() {
     super('tributario_py');
@@ -147,6 +155,9 @@ export class TributarioDatabase extends Dexie {
       ingresos: 'id, contacto_id, tipo_ingreso, periodo_devengado, sync_status',
       categorias_irp: 'id, codigo',
       sync_queue: '++autoId, tabla, registro_id, operacion, timestamp',
+    });
+    this.version(2).stores({
+      sync_metadata: 'key',
     });
   }
 }

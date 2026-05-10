@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
+import SyncIndicator from '../sync/SyncIndicator';
 
 export default function AppLayout() {
   return (
@@ -10,6 +11,10 @@ export default function AppLayout() {
         <Outlet />
       </main>
       <BottomNav />
+      {/* Sync indicator flotante solo en móvil, sobre el BottomNav */}
+      <div className="fixed bottom-20 right-4 z-40 md:hidden">
+        <SyncIndicator compact />
+      </div>
     </div>
   );
 }

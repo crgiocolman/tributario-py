@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import adjuntos, categorias_irp, comprobantes, contactos, declaraciones, exportacion, imputaciones, ingresos, periodos, reportes
+from app.api import adjuntos, categorias_irp, comprobantes, contactos, declaraciones, exportacion, imputaciones, ingresos, periodos, reportes, sync
 
 app = FastAPI(title="TributarioPY API", version="0.1.0")
 
@@ -25,6 +25,7 @@ app.include_router(periodos.router, prefix=_PREFIX)
 app.include_router(declaraciones.router, prefix=_PREFIX)
 app.include_router(reportes.router, prefix=_PREFIX)
 app.include_router(exportacion.router, prefix=_PREFIX)
+app.include_router(sync.router, prefix=_PREFIX)
 
 
 @app.get("/health")

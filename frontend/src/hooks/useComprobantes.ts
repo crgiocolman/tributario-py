@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type ComprobanteLocal, type ImputacionFiscalLocal } from '../services/db';
 import { generateUUID } from '../utils/uuid';
+import { push } from '../services/sync';
 
 async function pushSync(
   tabla: string,
@@ -16,6 +17,7 @@ async function pushSync(
     timestamp: new Date().toISOString(),
     intentos: 0,
   });
+  push();
 }
 
 interface FiltrosComprobantes {
@@ -66,6 +68,7 @@ export function useComprobantes(filtros: FiltrosComprobantes = {}) {
       await db.imputaciones.put(imputacionRecord);
     });
     await pushSync('comprobantes', comprobanteId, 'create', comprobante);
+    await pushSync('imputaciones_fiscales', imputacionRecord.id, 'create', imputacionRecord);
     return comprobante;
   }
 
@@ -86,6 +89,10 @@ export function useComprobantes(filtros: FiltrosComprobantes = {}) {
     });
     const updated = await db.comprobantes.get(id);
     if (updated) await pushSync('comprobantes', id, 'update', updated);
+    if (imputacion) {
+      const updatedImp = await db.imputaciones.where('comprobante_id').equals(id).first();
+      if (updatedImp) await pushSync('imputaciones_fiscales', updatedImp.id, 'update', updatedImp);
+    }
   }
 
   async function eliminar(id: string) {

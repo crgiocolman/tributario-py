@@ -51,7 +51,7 @@ async def subir_adjunto(
         tamano_bytes=tamano,
         ruta_almacenamiento=ruta,
         hash_sha256=sha256,
-        sync_status=SyncStatus.PENDING,
+        sync_status=SyncStatus.SYNCED,
         created_at=now,
     )
     db.add(adjunto)

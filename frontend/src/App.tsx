@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
+import ToastContainer from './components/sync/ToastContainer';
 import Home from './pages/Home';
 import Comprobantes from './pages/Comprobantes';
 import ComprobanteForm from './pages/ComprobanteForm';
@@ -8,10 +9,13 @@ import ContactoForm from './pages/ContactoForm';
 import Ingresos from './pages/Ingresos';
 import IngresoForm from './pages/IngresoForm';
 import Reportes from './pages/Reportes';
+import { useSync } from './hooks/useSync';
 
-export default function App() {
+function AppShell() {
+  useSync();
   return (
-    <BrowserRouter>
+    <>
+      <ToastContainer />
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
@@ -27,6 +31,14 @@ export default function App() {
           <Route path="/reportes" element={<Reportes />} />
         </Route>
       </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
     </BrowserRouter>
   );
 }

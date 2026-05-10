@@ -276,6 +276,14 @@ export default function ComprobanteForm() {
           created_at: new Date().toISOString(),
         };
         await db.adjuntos.put(adjunto);
+        await db.sync_queue.add({
+          tabla: 'adjuntos',
+          registro_id: adjunto.id,
+          operacion: 'create',
+          payload: { id: adjunto.id, comprobante_id: adjunto.comprobante_id },
+          timestamp: adjunto.created_at,
+          intentos: 0,
+        });
       }
 
       navigate('/comprobantes');

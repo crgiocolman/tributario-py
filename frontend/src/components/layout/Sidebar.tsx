@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import SyncIndicator from '../sync/SyncIndicator';
 
 const navItems = [
   {
@@ -80,6 +81,10 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      <div className="p-3 border-t border-slate-800">
+        <SyncIndicator />
+      </div>
     </aside>
   );
 }
