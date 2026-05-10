@@ -2,7 +2,7 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-10 — Bloque 2.1 completo. Fase 2 en curso.
+**Última actualización:** 2026-05-10 — Bloque 2.2 completo. Fase 2 en curso.
 
 ---
 
@@ -24,7 +24,13 @@ Progreso:
   - [x] `src/services/sync.ts` — placeholder Fase 3
   - [x] `src/App.tsx` — BrowserRouter con ruta `/` placeholder
   - [x] `src/pages/Home.tsx` — health check de API e IndexedDB
-- [ ] **Bloque 2.2 — Layout y navegación**
+- [x] **Bloque 2.2 — Layout y navegación**
+  - [x] `src/components/layout/AppLayout.tsx` — layout wrapper con `<Outlet />`
+  - [x] `src/components/layout/BottomNav.tsx` — bottom nav mobile (hidden md+), SVGs inline
+  - [x] `src/components/layout/Sidebar.tsx` — sidebar desktop (hidden mobile, visible md+)
+  - [x] 5 rutas: `/`, `/comprobantes`, `/ingresos`, `/contactos`, `/reportes`
+  - [x] Páginas placeholder: Comprobantes, Ingresos, Contactos, Reportes
+  - [x] Activo via `useLocation()` / `NavLink`, sin Zustand
 - [ ] **Bloque 2.3 — Pantallas CRUD (Comprobantes, Contactos, Ingresos)**
 - [ ] **Bloque 2.4 — Flujo offline**
 - [ ] **Bloque 2.5 — Reportes con Recharts**
@@ -97,12 +103,14 @@ npm run dev
 
 ## Próximo paso concreto
 
-**Bloque 2.1 completo.** Siguiente: **Bloque 2.2 — Layout y navegación**
+**Bloque 2.2 completo.** Siguiente: **Bloque 2.3 — Pantallas CRUD (Comprobantes, Contactos, Ingresos)**
 
-Antes de continuar, validar manualmente el bloque 2.1:
+Antes de continuar, validar manualmente el bloque 2.2:
 1. `cd frontend && npm run dev` → `http://localhost:5173`
-2. Home muestra "TributarioPY" con estado de API e IndexedDB
-3. DevTools → Application: IndexedDB `tributario_py`, Manifest, Service Worker
+2. Mobile (DevTools < 768px): bottom nav con 5 tabs, tab activo en azul
+3. Desktop (> 768px): sidebar visible, bottom nav oculto
+4. Navegar entre las 5 rutas: URL cambia, item activo se resalta
+5. Home mantiene los status badges de API e IndexedDB
 
 ---
 
