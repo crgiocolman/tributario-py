@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db, type CategoriaIRPLocal } from '../services/db';
 import { api } from '../services/api';
 
-interface ApiCategoria {
+export interface ApiCategoria {
   id: string;
   codigo: string;
   nombre: string;
@@ -19,13 +19,13 @@ interface ApiCategoria {
   } | null;
 }
 
-const DESTINO_MAP: Record<string, string> = {
+export const DESTINO_MAP: Record<string, string> = {
   irp_rsp: 'IRP-RSP',
   iva: 'IVA',
   no_imputar: 'NO_IMPUTAR',
 };
 
-function mapCategoria(c: ApiCategoria): CategoriaIRPLocal {
+export function mapCategoria(c: ApiCategoria): CategoriaIRPLocal {
   return {
     id: c.id,
     codigo: c.codigo,

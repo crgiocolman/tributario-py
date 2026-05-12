@@ -9,6 +9,7 @@ import {
 } from './db';
 import { generateUUID } from '../utils/uuid';
 import { useSyncStore } from '../stores/syncStore';
+import { type ApiCategoria, mapCategoria } from '../hooks/useCategorias';
 
 const BASE_URL = '/api/v1';
 const BACKOFF_DELAYS = [1000, 5000, 15000, 30000, 60000];
@@ -29,6 +30,7 @@ interface PullResponse {
     imputaciones_fiscales?: unknown[];
     ingresos?: unknown[];
     adjuntos?: unknown[];
+    categorias_irp?: unknown[];
   };
   server_timestamp: string;
   hay_mas: boolean;
@@ -260,6 +262,12 @@ async function applyPulledChanges(cambios: PullResponse['cambios']): Promise<voi
         await db.adjuntos.put({ ...registro, sync_status: 'synced' });
       }
     }
+  }
+
+  if (cambios.categorias_irp?.length) {
+    const mapped = (cambios.categorias_irp as ApiCategoria[]).map(mapCategoria);
+    await db.categorias_irp.clear();
+    await db.categorias_irp.bulkPut(mapped);
   }
 }
 

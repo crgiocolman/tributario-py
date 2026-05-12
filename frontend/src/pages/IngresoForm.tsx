@@ -27,8 +27,6 @@ const INITIAL: FormState = {
 
 const inputCls = 'w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500';
 const labelCls = 'block text-xs font-medium text-slate-400 mb-1';
-const readonlyCls = 'w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-300';
-
 const toInt = (s: string) => Math.max(0, Math.round(Number(s) || 0));
 const formatGs = (n: number) => new Intl.NumberFormat('es-PY').format(n);
 

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.archivo_adjunto import ArchivoAdjunto
+from app.models.categoria_irp import CategoriaIRP
 from app.models.comprobante import Comprobante
 from app.models.contacto import Contacto
 from app.models.enums import (
@@ -26,6 +27,7 @@ from app.models.enums import (
 )
 from app.models.imputacion_fiscal import ImputacionFiscal
 from app.models.ingreso import Ingreso
+from app.schemas.categoria_irp import CategoriaIRPOut
 from app.schemas.comprobante import ArchivoAdjuntoOut, ComprobanteOut
 from app.schemas.contacto import ContactoOut
 from app.schemas.imputacion import ImputacionOut
@@ -441,12 +443,23 @@ async def process_pull(db: AsyncSession, since: datetime | None) -> PullResponse
         await db.execute(select(ArchivoAdjunto).where(_since_filter(ArchivoAdjunto.created_at)))
     ).scalars().all()
 
+    # Categorías IRP: datos de referencia estáticos, siempre se devuelven todas (sin filtro since).
+    categorias = (
+        await db.execute(
+            select(CategoriaIRP)
+            .options(selectinload(CategoriaIRP.regla_imputacion))
+            .where(CategoriaIRP.activo == True)
+            .order_by(CategoriaIRP.orden)
+        )
+    ).scalars().all()
+
     cambios: dict[str, list[Any]] = {
         "contactos": [ContactoOut.model_validate(c).model_dump(mode="json") for c in contactos],
         "comprobantes": [ComprobanteOut.model_validate(c).model_dump(mode="json") for c in comprobantes],
         "imputaciones_fiscales": [ImputacionOut.model_validate(i).model_dump(mode="json") for i in imputaciones],
         "ingresos": [IngresoOut.model_validate(i).model_dump(mode="json") for i in ingresos],
         "adjuntos": [ArchivoAdjuntoOut.model_validate(a).model_dump(mode="json") for a in adjuntos],
+        "categorias_irp": [CategoriaIRPOut.model_validate(c).model_dump(mode="json") for c in categorias],
     }
 
     return PullResponse(cambios=cambios, server_timestamp=now, hay_mas=False)
