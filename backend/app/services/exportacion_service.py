@@ -1,10 +1,12 @@
 import io
 import logging
+import zipfile
 from datetime import date
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.archivo_adjunto import ArchivoAdjunto
 from app.models.categoria_irp import CategoriaIRP
 from app.models.comprobante import Comprobante
 from app.models.configuracion_fiscal import ConfiguracionFiscal
@@ -22,6 +24,7 @@ from app.schemas.reportes import (
     F515Liquidacion,
     F515ResumenOut,
 )
+from app.services import storage_service
 from app.services.irp_service import calcular_impuesto_irp
 
 logger = logging.getLogger(__name__)
@@ -36,7 +39,6 @@ _TIPO_COMPROBANTE_COD = {
     "liquidacion_salario": "1",
 }
 _CONDICION_COD = {"contado": "1", "credito": "2"}
-_DESTINO_IMP = {"iva": "211", "irp_rsp": "715", "no_imputar": "0"}
 _TIPO_OP_COD = {"compra": "C", "venta": "V"}
 
 _CSV_HEADER = (
@@ -68,10 +70,19 @@ async def export_reg_comprobantes_csv(db: AsyncSession, periodo: str) -> str:
         tipo_comp = _TIPO_COMPROBANTE_COD.get(comp.tipo_comprobante.value, "1")
         fecha = comp.fecha_emision.strftime("%d/%m/%Y")
         condicion = _CONDICION_COD.get(comp.condicion.value, "1")
-        destino = imp.destino_reg_comprobante.value if imp else "no_imputar"
-        imputacion = _DESTINO_IMP.get(destino, "0")
 
-        linea = ";".join([
+        if imp is None:
+            codigos_imputacion = ["0"]
+        elif imp.imputa_iva_credito and imp.imputa_irp:
+            codigos_imputacion = ["211", "715"]
+        elif imp.imputa_iva_credito:
+            codigos_imputacion = ["211"]
+        elif imp.imputa_irp:
+            codigos_imputacion = ["715"]
+        else:
+            codigos_imputacion = ["0"]
+
+        base = [
             tipo_reg,
             tipo_comp,
             fecha,
@@ -87,9 +98,9 @@ async def export_reg_comprobantes_csv(db: AsyncSession, periodo: str) -> str:
             str(comp.total),
             condicion,
             tipo_reg,
-            imputacion,
-        ])
-        out.write(linea + "\r\n")
+        ]
+        for codigo in codigos_imputacion:
+            out.write(";".join(base + [codigo]) + "\r\n")
 
     return out.getvalue()
 
@@ -253,3 +264,56 @@ async def export_f515_resumen(db: AsyncSession, anio: int) -> F515ResumenOut:
             saldo_a_pagar=impuesto.total,
         ),
     )
+
+
+def _sanitizar_nombre(s: str) -> str:
+    """Elimina caracteres inválidos en nombres de archivo/carpeta."""
+    for c in r'/\:*?"<>|':
+        s = s.replace(c, "_")
+    return s.strip()[:80]
+
+
+async def export_backup_adjuntos_zip(
+    db: AsyncSession,
+    anio: int,
+    desde: date | None = None,
+    hasta: date | None = None,
+) -> bytes:
+    fecha_desde = desde or date(anio, 1, 1)
+    fecha_hasta = hasta or date(anio, 12, 31)
+
+    rows = (
+        await db.execute(
+            select(
+                ArchivoAdjunto,
+                Comprobante.numero_comprobante,
+                Comprobante.fecha_emision,
+                Comprobante.tipo_operacion,
+                Contacto.razon_social,
+            )
+            .join(Comprobante, Comprobante.id == ArchivoAdjunto.comprobante_id)
+            .join(Contacto, Contacto.id == Comprobante.contacto_id)
+            .where(
+                Comprobante.fecha_emision >= fecha_desde,
+                Comprobante.fecha_emision <= fecha_hasta,
+                Comprobante.deleted_at.is_(None),
+            )
+            .order_by(Comprobante.fecha_emision, ArchivoAdjunto.created_at)
+        )
+    ).all()
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for adj, num_comp, fecha_emision, tipo_op, razon_social in rows:
+            ruta = storage_service.ruta_absoluta(adj.ruta_almacenamiento)
+            if not ruta.exists():
+                logger.warning("Adjunto no encontrado en disco: %s", adj.ruta_almacenamiento)
+                continue
+            ext = "." + adj.nombre_archivo.rsplit(".", 1)[-1] if "." in adj.nombre_archivo else ""
+            num = _sanitizar_nombre(num_comp or adj.id.hex[:8])
+            razon = _sanitizar_nombre(razon_social)
+            filename = f"{num}_{razon}{ext}"
+            arcname = f"{fecha_emision.year}/{fecha_emision.month:02d}/{tipo_op.value}/{filename}"
+            zf.write(ruta, arcname=arcname)
+
+    return buf.getvalue()

@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,3 +32,18 @@ async def f120_resumen(periodo: str, db: AsyncSession = Depends(get_db)):
 async def f515_resumen(anio: int, db: AsyncSession = Depends(get_db)):
     result = await exportacion_service.export_f515_resumen(db, anio)
     return DataResponse(data=result)
+
+
+@router.get("/backup-adjuntos")
+async def backup_adjuntos(
+    anio: int,
+    desde: date | None = None,
+    hasta: date | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    data = await exportacion_service.export_backup_adjuntos_zip(db, anio, desde, hasta)
+    return Response(
+        content=data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="adjuntos_{anio}.zip"'},
+    )

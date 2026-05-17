@@ -2,15 +2,32 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-17 — Fase 3 completa con fixes post-testing + PWA offline real. Fase 4 pendiente.
+**Última actualización:** 2026-05-17 — Fase 4 completa. Fase 5 pendiente.
 
 ---
 
 ## Fase actual
 
-**Fase 4 — Exportación y validación** (no iniciada)
+**Fase 5 — Mejoras UX** (no iniciada)
 
 Ver puntos de arranque en la sección "Próximo paso concreto".
+
+---
+
+## Fase 4 — Exportación y validación (cerrada)
+
+- [x] **Bloque 4.1 — CSV Reg. Comprobantes** (`frontend/src/pages/Reportes.tsx` + endpoint existente en `exportacion.py`). Pendiente: verificar columnas contra plantilla actual de Marangatu.
+- [x] **Bloque 4.2 — Resumen F120** (modal inline con tabla ventas/compras/liquidación, copiar texto + descargar JSON)
+- [x] **Bloque 4.3 — Resumen F515** (consolidación anual IRP: ingresos por tipo, egresos por categoría, tramos IRP, copiar + JSON)
+- [x] **Bloque 4.4 — Validaciones pre-exportación** (contra IndexedDB: período vacío → warning, sin imputación → warning, total ≠ exento+gravado_5+gravado_10 → error bloqueante)
+- [x] **Bloque 4.5 — Backup ZIP adjuntos** (`GET /api/v1/exportar/backup-adjuntos?anio=&desde=&hasta=`). Estructura: `{anio}/{mes}/{tipo_operacion}/{num_comp}_{razon_social}.{ext}`
+
+### Notas de implementación Fase 4
+
+- Validaciones (4.4) corren contra IndexedDB local (no el backend), lo que es consistente con el flujo offline-first. El usuario debe asegurarse de sincronizar antes de exportar.
+- CSV (4.1): si un comprobante tiene `imputa_iva_credito=True` AND `imputa_irp=True`, genera **dos líneas** en el CSV (una con código 211 y otra con 715).
+- `_DESTINO_IMP` eliminado del service — los códigos de imputación se derivan directamente de los booleans `imputa_iva_credito`/`imputa_irp`.
+- F120/F515 comparten el mismo selector de período mensual del top de la página. F515 y Backup tienen su propio selector de año.
 
 ---
 
@@ -126,11 +143,14 @@ npm run serve         # build + vite preview — usa SW de Workbox + HTTPS con m
 
 ## Próximo paso concreto
 
-**Fase 4 — Exportación.** Puntos de arranque:
+**Fase 5 — Mejoras UX** (opcional, post-MVP). Bloques posibles según roadmap:
 
-- `src/pages/Reportes.tsx` actualmente muestra "En construcción" — es el placeholder para implementar.
-- Endpoints backend ya existen en `backend/app/api/exportacion.py` (Bloque 1.5): CSV Reg. Comprobantes, resumen F120, resumen F515, ZIP backup.
-- Bloques: 4.1 CSV Reg. Comprobantes · 4.2 Resumen F120 · 4.3 Resumen F515 · 4.4 Validaciones pre-presentación · 4.5 ZIP backup adjuntos.
+- OCR básico sobre foto de factura (extraer RUC, monto, fecha automáticamente)
+- Contactos frecuentes con categoría sugerida automática
+- Notificaciones de vencimiento (push o local)
+- Multi-año (navegación entre ejercicios fiscales)
+
+No hay orden fijo — priorizar según necesidad del usuario.
 
 ---
 
