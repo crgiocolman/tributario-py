@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type ContactoLocal } from '../services/db';
 import { generateUUID } from '../utils/uuid';
+import { push } from '../services/sync';
 
 async function pushSync(
   tabla: string,
@@ -8,14 +9,33 @@ async function pushSync(
   operacion: 'create' | 'update' | 'delete',
   payload: unknown
 ) {
+  if (operacion === 'update') {
+    const allExisting = await db.sync_queue.where('registro_id').equals(registro_id).toArray();
+    const createItem = allExisting.find(i => i.operacion === 'create');
+    const updateItem = allExisting.find(i => i.operacion === 'update');
+
+    if (createItem?.autoId != null) {
+      await db.sync_queue.update(createItem.autoId, {
+        payload, timestamp: new Date().toISOString(), intentos: 0, ultimo_error: undefined,
+      });
+      if (updateItem?.autoId != null) await db.sync_queue.delete(updateItem.autoId);
+      push();
+      return;
+    }
+
+    if (updateItem?.autoId != null) {
+      await db.sync_queue.update(updateItem.autoId, {
+        payload, timestamp: new Date().toISOString(), intentos: 0, ultimo_error: undefined,
+      });
+      push();
+      return;
+    }
+  }
+
   await db.sync_queue.add({
-    tabla,
-    registro_id,
-    operacion,
-    payload,
-    timestamp: new Date().toISOString(),
-    intentos: 0,
+    tabla, registro_id, operacion, payload, timestamp: new Date().toISOString(), intentos: 0,
   });
+  push();
 }
 
 export function useContactos(busqueda = '') {

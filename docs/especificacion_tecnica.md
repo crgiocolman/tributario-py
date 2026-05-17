@@ -356,7 +356,7 @@ El frontend mantiene en IndexedDB las mismas tablas que PostgreSQL, más una tab
 **`sync_queue`** — cola de cambios pendientes:
 ```
 {
-  id: uuid,
+  autoId: integer (auto-increment, PK Dexie),
   tabla: "comprobantes",
   registro_id: uuid,
   operacion: "create" | "update" | "delete",
@@ -366,6 +366,8 @@ El frontend mantiene en IndexedDB las mismas tablas que PostgreSQL, más una tab
   ultimo_error: null
 }
 ```
+
+**Invariante de upsert:** antes de agregar un nuevo item, `pushSync()` busca items existentes para el mismo `registro_id`. Si encuentra un `create` (pendiente o fallido), reemplaza su payload y resetea `intentos: 0`. Si encuentra un `update` fallido, lo reemplaza. Solo agrega un item nuevo si no existe ninguno previo. Esto evita que el servidor reciba un `update` para un registro que nunca llegó vía `create`.
 
 **`sync_metadata`** — estado de sincronización:
 ```
@@ -434,12 +436,15 @@ El server devuelve todos los registros modificados desde ese timestamp:
     "contactos": [ { ...registros modificados } ],
     "comprobantes": [ ... ],
     "imputaciones_fiscales": [ ... ],
-    "ingresos": [ ... ]
+    "ingresos": [ ... ],
+    "categorias_irp": [ ... ]
   },
   "server_timestamp": "2026-05-09T14:30:05Z",
   "hay_mas": false
 }
 ```
+
+`categorias_irp` se incluye en **cada** respuesta pull (sin filtro `since`) — son datos semilla inmutables y así los dispositivos nuevos o con IndexedDB vacía los reciben en el primer pull.
 
 El cliente aplica los cambios a IndexedDB y actualiza `last_pull_timestamp`.
 
@@ -703,7 +708,8 @@ tributario-py/
 - **Tailwind CSS** — estilos
 - **Dexie.js** — wrapper de IndexedDB (simplifica CRUD offline)
 - **Recharts** — gráficos para reportes
-- **Workbox** — Service Worker toolkit (caching, background sync)
+- **vite-plugin-pwa** — genera el Service Worker con Workbox (estrategia generateSW, precache automático de assets del build)
+- **vite-plugin-mkcert** — HTTPS con certificado trusted para red local (necesario para SW en dispositivos Android)
 - **React Router** — navegación
 - **Zustand** — estado global ligero
 

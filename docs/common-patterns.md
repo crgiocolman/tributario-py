@@ -191,6 +191,53 @@ Las páginas que contienen formularios largos necesitan un **nested scroll conta
 
 ---
 
+## pushSync — upsert en sync_queue
+
+Antes de encolar un cambio, verificar si ya existe uno para el mismo `registro_id`. Aplica en los tres hooks (comprobantes, contactos, ingresos).
+
+```typescript
+async function pushSync(
+  tabla: string,
+  registro_id: string,
+  operacion: 'create' | 'update' | 'delete',
+  payload: unknown
+) {
+  if (operacion === 'update') {
+    const allExisting = await db.sync_queue.where('registro_id').equals(registro_id).toArray();
+    const createItem = allExisting.find(i => i.operacion === 'create');
+    const updateItem = allExisting.find(i => i.operacion === 'update');
+
+    if (createItem?.autoId != null) {
+      // Hay un create pendiente/fallido: actualizar payload + resetear reintentos
+      await db.sync_queue.update(createItem.autoId, {
+        payload, timestamp: new Date().toISOString(), intentos: 0, ultimo_error: undefined,
+      });
+      if (updateItem?.autoId != null) await db.sync_queue.delete(updateItem.autoId);
+      push();
+      return;
+    }
+
+    if (updateItem?.autoId != null) {
+      await db.sync_queue.update(updateItem.autoId, {
+        payload, timestamp: new Date().toISOString(), intentos: 0, ultimo_error: undefined,
+      });
+      push();
+      return;
+    }
+  }
+
+  await db.sync_queue.add({
+    tabla, registro_id, operacion, payload,
+    timestamp: new Date().toISOString(), intentos: 0,
+  });
+  push(); // fire-and-forget — no await
+}
+```
+
+**Por qué:** sin este upsert, editar un registro con un `create` fallido apila un `update` encima. El servidor recibe el `update` para un registro que nunca llegó vía `create` → 404. El `push()` al final es fire-and-forget (sin `await`) para no bloquear el guardado local.
+
+---
+
 ## `<input type="file">` oculto dentro de `<label>`
 
 Para reemplazar el input de archivo nativo con un botón custom, usar `hidden` (no `sr-only`).

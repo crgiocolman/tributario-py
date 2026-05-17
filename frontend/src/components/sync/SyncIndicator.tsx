@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { db } from '../../services/db';
-import { push, syncAll } from '../../services/sync';
+import { db, type SyncQueueItem } from '../../services/db';
+import { push, syncAll, MAX_RETRIES } from '../../services/sync';
 import { useSyncStore, type SyncStatus } from '../../stores/syncStore';
 
 function formatRelative(iso: string): string {
@@ -63,7 +63,7 @@ interface Props {
 export default function SyncIndicator({ compact = false }: Props) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const { status, pendingCount, failedItems, lastSyncAt } = useSyncStore();
+  const { status, pendingCount, failedItems, lastSyncAt, setFailedItems } = useSyncStore();
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -83,6 +83,28 @@ export default function SyncIndicator({ compact = false }: Props) {
   async function handleRetry(autoId: number) {
     await db.sync_queue.update(autoId, { intentos: 0, ultimo_error: undefined });
     await push();
+  }
+
+  async function handleDiscard(item: SyncQueueItem) {
+    const ok = window.confirm('Este registro no se sincronizará al servidor. ¿Continuar?');
+    if (!ok) return;
+    if (item.autoId != null) await db.sync_queue.delete(item.autoId);
+
+    // Cascade: si se descarta un comprobante create, limpiar imputación y adjuntos huérfanos
+    if (item.tabla === 'comprobantes' && item.operacion === 'create') {
+      const imputacion = await db.imputaciones.where('comprobante_id').equals(item.registro_id).first();
+      if (imputacion) {
+        await db.sync_queue.where('registro_id').equals(imputacion.id).delete();
+      }
+      const adjuntosComp = await db.adjuntos.where('comprobante_id').equals(item.registro_id).toArray();
+      for (const adj of adjuntosComp) {
+        await db.sync_queue.where('registro_id').equals(adj.id).delete();
+      }
+    }
+
+    // Recargar desde DB para reflejar el cascade
+    const newFailed = await db.sync_queue.filter(i => i.intentos >= MAX_RETRIES).toArray();
+    setFailedItems(newFailed);
   }
 
   const showBadge = pendingCount > 0 || status === 'error';
@@ -160,12 +182,20 @@ export default function SyncIndicator({ compact = false }: Props) {
                         {item.ultimo_error}
                       </p>
                     )}
-                    <button
-                      onClick={() => item.autoId != null && handleRetry(item.autoId)}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                    >
-                      ↩ Reintentar
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => item.autoId != null && handleRetry(item.autoId)}
+                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        ↩ Reintentar
+                      </button>
+                      <button
+                        onClick={() => handleDiscard(item)}
+                        className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                      >
+                        Descartar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

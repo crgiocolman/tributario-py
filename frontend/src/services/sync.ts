@@ -13,7 +13,7 @@ import { type ApiCategoria, mapCategoria } from '../hooks/useCategorias';
 
 const BASE_URL = '/api/v1';
 const BACKOFF_DELAYS = [1000, 5000, 15000, 30000, 60000];
-const MAX_RETRIES = 5;
+export const MAX_RETRIES = 5;
 const PULL_INTERVAL_MS = 5 * 60 * 1000;
 
 interface PushResponse {
@@ -365,14 +365,15 @@ export async function syncAll(): Promise<void> {
   await push();
   await cleanupLocalCache();
 
-  const afterFailed = await db.sync_queue.filter((i) => i.intentos >= MAX_RETRIES).count();
+  const failedList = await db.sync_queue.filter((i) => i.intentos >= MAX_RETRIES).toArray();
   const afterPending = await db.sync_queue.filter((i) => i.intentos < MAX_RETRIES).count();
+  store.setFailedItems(failedList);
   const now = new Date().toISOString();
   store.setLastSyncAt(now);
 
-  if (afterFailed > 0) {
+  if (failedList.length > 0) {
     store.setStatus('error');
-    store.addToast('error', `${afterFailed} cambio${afterFailed > 1 ? 's' : ''} no pudo sincronizarse`);
+    store.addToast('error', `${failedList.length} cambio${failedList.length > 1 ? 's' : ''} no pudo sincronizarse`);
   } else {
     store.setStatus('idle');
     if (beforePending > 0 && afterPending === 0) {

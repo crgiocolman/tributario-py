@@ -2,7 +2,7 @@
 
 Memoria operativa del proyecto. Leer esto primero al retomar después de una pausa.
 
-**Última actualización:** 2026-05-10 — Fase 3 completa. Fase 4 pendiente.
+**Última actualización:** 2026-05-17 — Fase 3 completa con fixes post-testing + PWA offline real. Fase 4 pendiente.
 
 ---
 
@@ -34,6 +34,17 @@ Ver puntos de arranque en la sección "Próximo paso concreto".
 - `ComprobanteForm.tsx`: vista de adjuntos existentes en modo edición (miniatura, ícono PDF, borrar).
 - `ComprobanteForm.tsx`: reconciliación con backend al abrir en edición — elimina de Dexie adjuntos que ya no existen en el servidor.
 - `ComprobanteForm.tsx`: recarga la lista de adjuntos cuando `lastSyncAt` cambia (limpia cache visual post-sync).
+
+### Fixes post-testing de integración (2026-05-17)
+
+- `pushSync()` en los 3 hooks (comprobantes, contactos, ingresos): **lógica upsert** — si existe un `create` o `update` fallido para el mismo `registro_id`, reemplaza el payload y resetea `intentos: 0` en lugar de apilar un nuevo item. Evita que el servidor reciba un `update` para un registro que nunca llegó vía `create`.
+- `useContactos.ts`, `useIngresos.ts`: agregado `push()` fire-and-forget (faltaba en la implementación original).
+- `syncAll()` en `sync.ts`: ahora llama `store.setFailedItems()` con la lista real — antes `failedItems` siempre era vacía porque se contaba (`.count()`) pero no se almacenaba.
+- `SyncIndicator.tsx`: botón "Descartar" junto a "Reintentar" en cada error de la cola. Con confirm dialog. Cascade al descartar un `comprobantes create`: elimina también la `imputacion_fiscal` y `adjuntos` huérfanos de `sync_queue` (sin estos, el adjunto quedaba atascado como pendiente eternamente porque `pushAdjuntos` lo saltea si el padre no está sincronizado).
+- `sync.ts`: `MAX_RETRIES` exportado para uso en `SyncIndicator.tsx`.
+- **PWA offline real**: migrado de SW manual a `vite-plugin-pwa` (Workbox generateSW). El SW pre-cachea todos los assets del build. `public/sw.js` eliminado.
+- **HTTPS local**: `vite-plugin-mkcert` genera cert trusted para red local. CA en `~/.vite-plugin-mkcert/rootCA.pem` — debe importarse en Android para que el SW se registre.
+- `sync_service.py`: pull incluye `categorias_irp` (seed data) en cada respuesta — dispositivos frescos o con nueva origen de IndexedDB las reciben en el primer pull sin necesitar seed directo.
 
 ---
 
@@ -104,7 +115,9 @@ python -m app.seed.run
 
 # 7. Frontend (desde frontend/)
 cd ..\frontend
-npm run dev
+npm run dev           # Desarrollo con HMR (no tiene SW real)
+# Para probar offline / mobile con SW real:
+npm run serve         # build + vite preview — usa SW de Workbox + HTTPS con mkcert
 ```
 
 **pgAdmin**: pgAdmin corre en red `bridge` separada. `tributario_db` debe conectarse a `bridge` manualmente después de cada reinicio (paso 2). Usar IP directa, no nombre de contenedor (bridge default no tiene DNS entre contenedores).
@@ -114,11 +127,10 @@ npm run dev
 ## Próximo paso concreto
 
 **Fase 4 — Exportación.** Puntos de arranque:
-- `Reportes.tsx` es el placeholder — habilitar exportación CSV Reg. Comprobantes, resumen F120/F515, validaciones pre-presentación.
-- Endpoints backend ya existen en `api/exportacion.py` (Bloque 1.5).
-- `src/stores/syncStore.ts` — Zustand store ya disponible, puede usarse para estado global de reportes si se necesita.
 
-**Nota sobre `pages/Reportes.tsx`:** actualmente muestra "En construcción". Es el placeholder para Fase 4 (exportación CSV Reg. Comprobantes, resumen F120/F515, validaciones pre-presentación). No eliminar ni reutilizar para otra cosa.
+- `src/pages/Reportes.tsx` actualmente muestra "En construcción" — es el placeholder para implementar.
+- Endpoints backend ya existen en `backend/app/api/exportacion.py` (Bloque 1.5): CSV Reg. Comprobantes, resumen F120, resumen F515, ZIP backup.
+- Bloques: 4.1 CSV Reg. Comprobantes · 4.2 Resumen F120 · 4.3 Resumen F515 · 4.4 Validaciones pre-presentación · 4.5 ZIP backup adjuntos.
 
 ---
 
